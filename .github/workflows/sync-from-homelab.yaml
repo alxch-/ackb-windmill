@@ -1,0 +1,29 @@
+name: Sync from Homelab
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install wmill CLI
+        run: npm install -g windmill-cli
+
+      - name: Pull from homelab workspace
+        run: wmill sync pull --skip-variables --skip-secrets --skip-resources
+        env:
+          WMILL_TOKEN: ${{ secrets.WMILL_TOKEN }}
+          WMILL_BASE_URL: ${{ vars.WMILL_URL }}
+          WMILL_WORKSPACE: homelab
+
+      - name: Create PR if changes
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "sync: pull changes from homelab workspace"
+          title: "Sync from homelab workspace"
+          branch: sync/homelab
+          delete-branch: true

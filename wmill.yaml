@@ -1,0 +1,14 @@
+defaultTs: bun
+includes:
+  - "f/**"
+  - "u/**"
+excludes: []
+skipVariables: true
+skipSecrets: true
+skipResources: true
+
+gitBranches:
+  main:
+    includes:
+      - "f/**"
+      - "u/**"
