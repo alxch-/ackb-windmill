@@ -1,0 +1,70 @@
+summary: Check new decisions once a day
+description: ''
+value:
+  modules:
+    - id: a
+      value:
+        type: script
+        input_transforms:
+          queries:
+            type: javascript
+            expr: flow_input.queries
+        is_trigger: false
+        path: f/perso/check_decisions
+    - id: b
+      value:
+        type: forloopflow
+        modules:
+          - id: c
+            summary: Send a message to discord using webhook (discord)
+            value:
+              type: script
+              input_transforms:
+                discord_webhook:
+                  type: static
+                  value: '$res:f/perso/discord_ackb_homelab_notifications'
+                message:
+                  type: javascript
+                  value: >-
+                    New decision detected:
+                    https://www.courdecassation.fr/decision/${flow_input.iter.value}
+                  expr: >-
+                    `New decision detected:
+                    https://www.courdecassation.fr/decision/${flow_input.iter.value}`
+              is_trigger: false
+              path: hub/16038/discord/send_a_message_to_discord_using_webhook
+        iterator:
+          type: javascript
+          expr: results.a
+        parallel: false
+        skip_failures: true
+  failure_module:
+    id: failure
+    summary: Send the error to discord (discord)
+    value:
+      type: script
+      input_transforms:
+        name:
+          type: javascript
+          expr: error.name
+        discord_webhook:
+          type: static
+          value: '$res:f/perso/discord_ackb_homelab_notifications'
+        message:
+          type: javascript
+          expr: error.message
+      is_trigger: false
+      path: hub/16045/discord/send_the_error_to_discord
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  order:
+    - queries
+  properties:
+    queries:
+      type: array
+      description: ''
+      default: []
+      items:
+        type: string
+  required: []

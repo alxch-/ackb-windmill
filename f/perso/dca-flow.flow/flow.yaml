@@ -1,0 +1,91 @@
+summary: DCA crypto Alex
+description: ''
+value:
+  modules:
+    - id: b
+      summary: ''
+      value:
+        type: branchall
+        branches:
+          - summary: Buy bitcoin
+            modules:
+              - id: h
+                value:
+                  type: script
+                  input_transforms:
+                    funds:
+                      type: static
+                      value: 25
+                    symbol:
+                      type: static
+                      value: BTC/EUR
+                  is_trigger: false
+                  path: f/perso/crypto-dca
+            expr: ''
+            parallel: true
+            skip_failure: false
+          - summary: Buy ethereum
+            modules:
+              - id: g
+                value:
+                  type: script
+                  input_transforms:
+                    funds:
+                      type: static
+                      value: 25
+                    symbol:
+                      type: static
+                      value: ETH/EUR
+                  is_trigger: false
+                  path: f/perso/crypto-dca
+            expr: 'false'
+            parallel: true
+            skip_failure: false
+        parallel: true
+    - id: e
+      summary: Loop over results and send message in discord
+      value:
+        type: forloopflow
+        modules:
+          - id: f
+            summary: Send a message to discord using webhook (discord)
+            value:
+              type: script
+              input_transforms:
+                discord_webhook:
+                  type: static
+                  value: '$res:f/perso/discord_ackb_homelab_notifications'
+                message:
+                  type: javascript
+                  value: '${flow_input.iter.value}'
+                  expr: '`${flow_input.iter.value}`'
+              is_trigger: false
+              path: hub/1511/discord/send_a_message_to_discord_using_webhook
+        iterator:
+          type: javascript
+          expr: results.b
+        parallel: false
+        skip_failures: true
+  failure_module:
+    id: failure
+    summary: Send the error to discord (discord)
+    value:
+      type: script
+      input_transforms:
+        name:
+          type: javascript
+          expr: error.name
+        discord_webhook:
+          type: static
+          value: '$res:u/4lexcharrier/discord_ackb_homelab_notifications'
+        message:
+          type: javascript
+          expr: error.message
+      is_trigger: false
+      path: hub/1485/discord/send_the_error_to_discord
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  order: []
+  properties: {}
+  required: []

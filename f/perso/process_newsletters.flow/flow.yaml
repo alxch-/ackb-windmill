@@ -1,0 +1,234 @@
+summary: Process newsletters
+description: ''
+value:
+  modules:
+    - id: a
+      summary: Extract articles and summary from newsletter
+      value:
+        type: aiagent
+        input_transforms:
+          max_completion_tokens:
+            type: static
+            value: null
+          max_iterations:
+            type: static
+            value: 10
+          memory:
+            type: static
+            value:
+              kind: 'off'
+          output_schema:
+            type: static
+            value:
+              $schema: 'https://json-schema.org/draft/2020-12/schema'
+              type: object
+              order:
+                - type
+                - source
+                - newsletter_summary
+                - language
+                - articles
+              properties:
+                type:
+                  type: string
+                  description: ''
+                  default: ''
+                  enum:
+                    - links
+                    - text-only
+                articles:
+                  type: array
+                  description: ''
+                  default: []
+                  items:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                      title:
+                        type: string
+                      topics:
+                        type: array
+                        items:
+                          type: string
+                      url:
+                        type: string
+                    required:
+                      - url
+                      - title
+                      - summary
+                language:
+                  type: string
+                  description: ISO 639 language codes
+                  default: ''
+                newsletter_summary:
+                  type: string
+                source:
+                  type: string
+              required:
+                - type
+                - source
+                - newsletter_summary
+                - language
+                - articles
+          output_type:
+            type: static
+            value: text
+          provider:
+            type: static
+            value:
+              kind: customai
+              model: anthropic/claude-haiku-4-5-20251001
+              resource: '$res:f/perso/litellm_windmil_customai'
+          streaming:
+            type: static
+            value: true
+          system_prompt:
+            type: static
+            value: >-
+              You are a newsletter processing assistant. Your job is to analyze
+              newsletter emails and extract valuable content.
+
+                ## Your tasks:
+                1. Identify if this newsletter contains article links or is text-only content
+                2. For newsletters with links: identify which links are actual articles (ignore unsubscribe, social media, privacy policy, tracking pixels, etc.)
+                3. Summarize the newsletter and each article
+
+                ## Guidelines:
+                - Ignore all footer/header junk: unsubscribe links, social media icons, "view in browser", legal text
+                - Identify the newsletter source/author when possible
+                - Extract meaningful topics/tags for each article
+                - Write summaries that capture the key insight, not just the title
+                - Handle any language (English, French, etc.). For the language output use the ISO 639 language codes.
+
+                For text-only newsletters (personal essays, no external links), set type to "text-only" and leave articles as empty array. Put the full summary in newsletter_summary.
+
+                Always respond with valid JSON only, no markdown code blocks.
+          temperature:
+            type: static
+            value: null
+          user_images:
+            type: static
+            value: []
+          user_message:
+            type: javascript
+            expr: |-
+              `Process this newsletter email.
+
+                **From:** ${flow_input.from}
+                **Subject:** ${flow_input.subject}
+
+                <email_content>
+                ${flow_input.textHtml}
+                </email_content>
+
+                Instructions:
+                1. Read the newsletter content
+                2. Identify article links worth extracting (ignore junk links)
+                3. Return structured JSON with summaries
+
+                If there are no article links (just text content), summarize directly without calling the tool`
+        tools: []
+      continue_on_error: false
+      mock:
+        enabled: false
+        return_value:
+          example: value
+    - id: b
+      summary: Compute embeddings and store in supabase
+      value:
+        type: rawscript
+        content: '!inline compute_embeddings_and_store_in_supabase.inline_script.py'
+        input_transforms:
+          type:
+            type: javascript
+            expr: results.a.output.type
+          articles:
+            type: javascript
+            expr: results.a.output.articles
+          date:
+            type: javascript
+            expr: flow_input.date
+          language:
+            type: javascript
+            expr: results.a.output.language
+          newsletter_summary:
+            type: javascript
+            expr: results.a.output.newsletter_summary
+          openai_resource:
+            type: javascript
+            expr: resource('f/perso/litellm_windmil_customai')
+          source:
+            type: javascript
+            expr: results.a.output.source
+          subject:
+            type: javascript
+            expr: flow_input.subject
+          supabase_resource:
+            type: javascript
+            expr: resource('f/perso/supabase_alex_org')
+        lock: '!inline compute_embeddings_and_store_in_supabase.inline_script.lock'
+        concurrency_time_window_s: 0
+        language: python3
+      continue_on_error: false
+    - id: c
+      summary: Send a message to discord using webhook (discord)
+      value:
+        type: script
+        input_transforms:
+          discord_webhook:
+            type: static
+            value: '$res:f/perso/discord_ackb_homelab_notifications'
+          message:
+            type: javascript
+            expr: >-
+              `\`\`\`\{"success": ${results.b.success}, "newsletter_id":
+              ${results.b.newsletter_id}, "articles_created":
+              ${results.b.articles_created}\}\`\`\``
+        is_trigger: false
+        path: hub/16038/discord/send_a_message_to_discord_using_webhook
+  failure_module:
+    id: failure
+    summary: Send the error to discord (discord)
+    value:
+      type: script
+      input_transforms:
+        name:
+          type: javascript
+          expr: error.name
+        discord_webhook:
+          type: static
+          value: '$res:f/perso/discord_ackb_homelab_notifications'
+        message:
+          type: javascript
+          expr: error.message
+      is_trigger: false
+      path: hub/16045/discord/send_the_error_to_discord
+  flow_env: {}
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  description: Webhook body data
+  order:
+    - from
+    - textHtml
+    - subject
+    - date
+  properties:
+    date:
+      type: string
+      description: ''
+      default: ''
+    from:
+      type: string
+      description: The 'from' field from webhook body
+      default: ''
+    subject:
+      type: string
+      description: ''
+      default: ''
+    textHtml:
+      type: string
+      description: ''
+      default: ''
+  required: []

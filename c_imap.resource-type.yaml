@@ -1,0 +1,30 @@
+description: ''
+format_extension: null
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  order:
+    - host
+    - user
+    - password
+  properties:
+    host:
+      type: string
+      description: ''
+      default: ''
+      nullable: false
+    password:
+      type: string
+      description: ''
+      default: ''
+      nullable: false
+      password: true
+    user:
+      type: string
+      description: ''
+      default: ''
+      nullable: false
+  required:
+    - password
+    - user
+    - host

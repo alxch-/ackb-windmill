@@ -1,0 +1,52 @@
+summary: search_events_in_range
+description: ''
+lock: '!inline f/perso/search_events_in_range.script.lock'
+kind: script
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  properties:
+    calendarName:
+      type: string
+      description: ''
+      default: null
+      originalType: string
+    end:
+      type: string
+      description: ''
+      default: null
+      format: date-time
+    limit:
+      type: integer
+      description: ''
+      default: 50
+    NextcloudResource:
+      type: object
+      description: ''
+      default: null
+      format: resource-nextcloud
+    q:
+      type: string
+      description: ''
+      default: null
+      originalType: string
+    start:
+      type: string
+      description: ''
+      default: null
+      format: date-time
+    useAppApiAuth:
+      type: boolean
+      description: ''
+      default: false
+    userId:
+      type: string
+      description: ''
+      default: null
+      originalType: string
+  required:
+    - NextcloudResource
+    - userId
+    - calendarName
+    - start
+    - end

@@ -1,0 +1,10 @@
+summary: Get releve compteur linky
+description: ''
+lock: '!inline u/alex/get_releve.script.lock'
+kind: script
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  properties: {}
+  required: []
+tag: homelab

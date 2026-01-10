@@ -1,0 +1,141 @@
+summary: Personal calendar agent
+description: ''
+value:
+  modules:
+    - id: b
+      value:
+        type: aiagent
+        input_transforms:
+          max_completion_tokens:
+            type: static
+            value: null
+          max_iterations:
+            type: static
+            value: 10
+          memory:
+            type: static
+            value:
+              kind: 'off'
+          output_schema:
+            type: static
+            value: null
+          output_type:
+            type: static
+            value: text
+          provider:
+            type: static
+            value:
+              kind: openai
+              model: gpt-5
+              resource: '$res:u/alex/perso_openai'
+          streaming:
+            type: static
+            value: true
+          system_prompt:
+            type: static
+            value: "You are a calendar assistant connected to a Nextcloud calendar through tools.\n\nYou can only interact with the calendar by calling the available tools.\nYou must reason step by step and choose the correct tool based on user intent.\n\nAvailable capabilities\n\t•\tSearch events in a calendar within a date range\n\t•\tRetrieve a specific event by UID\n\t•\tCreate new calendar events\n\nTool usage rules\n\t1.\tAlways use a bounded date range when searching\n\t•\tNever attempt to search “everything”.\n\t•\tIf the user does not specify dates, infer a reasonable range.\n\t•\tFor “next week”: Monday 00:00 to next Monday 00:00 in the user’s local timezone.\n\t•\tFor vague requests: default to now − 30 days through now + 180 days.\n\t2.\tUse search_events_in_range for discovery\n\t•\tUse it whenever the user asks to “find”, “list”, “show”, or “check” events.\n\t•\tSet q only if the user mentions a meaningful keyword (name, person, place).\n\t•\tIf the user wants all events in a range, omit q.\n\t3.\tUse get_event_by_uid only when you already know the UID\n\t•\tThis is for follow-up actions on a specific event (confirmation, update, delete).\n\t•\tNever guess a UID.\n\t4.\tUse create_event only when all required information is known\n\t•\tRequired: start datetime, end datetime, summary.\n\t•\tIf information is missing or ambiguous, ask a clarifying question instead of guessing.\n\t5.\tNever invent events\n\t•\tIf no events are found, say so clearly.\n\t•\tSuggest checking another calendar, a different date range, or creating an event.\n\t6.\tNever assume a different calendar or timezone\n\t•\tUse the default calendar provided by the tools unless the user explicitly asks otherwise.\n\nResult handling\n\t•\tWhen multiple events are found:\n\t•\tSummarize them clearly (date, time, title).\n\t•\tAsk the user to clarify if they want to act on one.\n\t•\tWhen zero events are found:\n\t•\tState that no events were found in the searched range.\n\t•\tAsk a short follow-up question (calendar, timezone, or creation).\n\nStyle guidelines\n\t•\tBe concise and factual.\n\t•\tDo not expose tool names or internal implementation details.\n\t•\tDo not speculate."
+          temperature:
+            type: static
+            value: null
+          user_images:
+            type: static
+            value: []
+          user_message:
+            type: javascript
+            expr: flow_input.message
+        tools:
+          - id: c
+            summary: search_events_in_range
+            value:
+              type: script
+              input_transforms:
+                calendarName:
+                  type: static
+                  value: Personal
+                end:
+                  type: ai
+                limit:
+                  type: ai
+                NextcloudResource:
+                  type: static
+                  value: '$res:f/perso/alex_nextcloud'
+                q:
+                  type: ai
+                start:
+                  type: ai
+                useAppApiAuth:
+                  type: static
+                  value: false
+                userId:
+                  type: javascript
+                  expr: variable('f/perso/nextcloud_alex_user_id')
+              is_trigger: false
+              path: f/perso/search_events_in_range
+              tool_type: flowmodule
+          - id: d
+            summary: get_event_by_uid
+            value:
+              type: script
+              input_transforms:
+                calendarName:
+                  type: static
+                  value: Personal
+                end:
+                  type: ai
+                NextcloudResource:
+                  type: static
+                  value: '$res:f/perso/alex_nextcloud'
+                start:
+                  type: ai
+                uid:
+                  type: ai
+                useAppApiAuth:
+                  type: static
+                  value: false
+                userId:
+                  type: javascript
+                  expr: variable('f/perso/nextcloud_alex_user_id')
+              is_trigger: false
+              path: f/perso/get_event_by_uid
+              tool_type: flowmodule
+          - id: f
+            summary: create_event
+            value:
+              type: script
+              input_transforms:
+                summary:
+                  type: ai
+                description:
+                  type: ai
+                calendarName:
+                  type: static
+                  value: Personal
+                event_end:
+                  type: ai
+                event_start:
+                  type: ai
+                location:
+                  type: ai
+                NextcloudResource:
+                  type: static
+                  value: '$res:f/perso/alex_nextcloud'
+                useAppApiAuth:
+                  type: static
+                  value: false
+                userId:
+                  type: javascript
+                  expr: variable('f/perso/nextcloud_alex_user_id')
+              is_trigger: false
+              path: f/perso/create_event
+              tool_type: flowmodule
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  order:
+    - message
+  properties:
+    message:
+      type: string
+      description: ''
+      default: ''
+  required: []

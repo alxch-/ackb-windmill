@@ -1,0 +1,89 @@
+summary: Discord command calendar agent
+description: ''
+value:
+  modules:
+    - id: e
+      summary: Verify token
+      value:
+        type: rawscript
+        content: '!inline verify_token.inline_script.deno.ts'
+        input_transforms:
+          discord_config:
+            type: static
+            value: '$res:f/perso/discord_windmill_ackb'
+          raw_string:
+            type: javascript
+            expr: flow_input.raw_string
+          x_signature_ed25519:
+            type: javascript
+            expr: flow_input.x_signature_ed25519
+          x_signature_timestamp:
+            type: javascript
+            expr: flow_input.x_signature_timestamp
+        lock: '!inline verify_token.inline_script.lock'
+        language: deno
+      continue_on_error: false
+    - id: f
+      summary: Get response
+      value:
+        type: rawscript
+        content: '!inline get_response.inline_script.deno.ts'
+        input_transforms:
+          interaction:
+            type: javascript
+            expr: results.e.interaction
+        lock: ''
+        language: deno
+    - id: h
+      value:
+        type: flow
+        input_transforms:
+          message:
+            type: javascript
+            expr: results.f
+        path: f/perso/personal_calendar_agent
+    - id: g
+      summary: Reply
+      value:
+        type: rawscript
+        content: '!inline reply.inline_script.deno.ts'
+        input_transforms:
+          interaction:
+            type: javascript
+            expr: results.e.interaction
+          reply:
+            type: javascript
+            expr: results.h.output
+          token:
+            type: static
+            value: '$var:f/perso/discord_windmill_bot_token'
+        lock: '!inline reply.inline_script.lock'
+        language: deno
+  early_return: e
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  order:
+    - raw_string
+    - x_signature_ed25519
+    - x_signature_timestamp
+  properties:
+    raw_string:
+      type: string
+      description: ''
+      default: ''
+      nullable: false
+    x_signature_ed25519:
+      type: string
+      description: ''
+      default: ''
+      nullable: false
+    x_signature_timestamp:
+      type: string
+      description: ''
+      default: ''
+      nullable: false
+  required:
+    - x_signature_timestamp
+    - x_signature_ed25519
+    - raw_string

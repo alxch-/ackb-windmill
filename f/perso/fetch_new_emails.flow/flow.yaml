@@ -1,0 +1,91 @@
+summary: Fetch new emails from inbox
+description: ""
+value:
+  modules:
+    - id: a
+      summary: Fetch new emails from mailbox
+      value:
+        type: rawscript
+        content: "!inline fetch_new_emails_from_mailbox.inline_script.py"
+        input_transforms:
+          excluded_senders:
+            type: javascript
+            expr: flow_input.excluded_senders
+          folder:
+            type: javascript
+            expr: flow_input.folder
+          imap_resource:
+            type: javascript
+            expr: flow_input.imap_resource
+        lock: "!inline fetch_new_emails_from_mailbox.inline_script.lock"
+        language: python3
+    - id: c
+      summary: Iterate on emails
+      value:
+        type: forloopflow
+        modules:
+          - id: d
+            value:
+              type: flow
+              input_transforms:
+                date:
+                  type: javascript
+                  expr: flow_input.iter.value.date
+                from:
+                  type: javascript
+                  expr: flow_input.iter.value.sender
+                subject:
+                  type: javascript
+                  expr: flow_input.iter.value.subject
+                textHtml:
+                  type: javascript
+                  expr: flow_input.iter.value.html_body
+              path: f/perso/process_newsletters
+        iterator:
+          type: javascript
+          expr: results.a
+        parallel: true
+        skip_failures: true
+        squash: false
+  failure_module:
+    id: failure
+    summary: Send the error to discord (discord)
+    value:
+      type: script
+      input_transforms:
+        name:
+          type: javascript
+          expr: error.name
+        discord_webhook:
+          type: static
+          value: $res:f/perso/discord_ackb_homelab_notifications
+        message:
+          type: javascript
+          expr: error.message
+      is_trigger: false
+      path: hub/16045/discord/send_the_error_to_discord
+schema:
+  $schema: https://json-schema.org/draft/2020-12/schema
+  type: object
+  order:
+    - imap_resource
+    - folder
+    - excluded_senders
+  properties:
+    imap_resource:
+      type: object
+      description: ""
+      format: resource-c_imap
+      nullable: false
+    folder:
+      type: string
+      description: ""
+      default: INBOX
+    excluded_senders:
+      type: array
+      description: ""
+      default: []
+      items:
+        type: string
+  required:
+    - imap_resource

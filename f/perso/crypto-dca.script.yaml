@@ -1,0 +1,24 @@
+summary: Buy crypto from coinbase
+description: ''
+lock: '!inline f/perso/crypto-dca.script.lock'
+concurrency_time_window_s: 0
+kind: script
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  order:
+    - symbol
+    - funds
+  properties:
+    funds:
+      type: number
+      description: ''
+      default: null
+    symbol:
+      type: string
+      description: ''
+      default: null
+      originalType: string
+  required:
+    - symbol
+    - funds

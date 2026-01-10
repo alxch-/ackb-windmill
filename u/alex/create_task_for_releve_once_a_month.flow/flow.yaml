@@ -1,0 +1,40 @@
+summary: Créer tache pour relève linky tous les 26
+description: ''
+value:
+  modules:
+    - id: a
+      value:
+        type: script
+        input_transforms: {}
+        is_trigger: false
+        path: u/alex/get_releve
+    - id: b
+      value:
+        type: rawscript
+        content: '!inline inline_script_0.inline_script.py'
+        input_transforms:
+          description:
+            type: javascript
+            expr: |-
+              `Compteur: ${results.a}
+              PDL: 07170043339200`
+          due_date:
+            type: static
+            value: ''
+          project_id:
+            type: static
+            value: 6Crg5qgq6m8936vV
+          task_name:
+            type: static
+            value: Effectuer relève linky
+          todoist_resource:
+            type: static
+            value: '$res:u/alex/todoist_alex'
+        lock: '!inline inline_script_0.inline_script.lock'
+        language: python3
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  order: []
+  properties: {}
+  required: []

@@ -1,0 +1,24 @@
+summary: Check Judilibre content
+description: ''
+lock: '!inline f/perso/check_decisions.script.lock'
+concurrency_time_window_s: 0
+kind: script
+schema:
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
+  type: object
+  order:
+    - no_default
+    - name
+    - age
+    - obj
+    - l
+    - file_
+  properties:
+    queries:
+      type: array
+      description: ''
+      default: []
+      items:
+        type: string
+      originalType: 'string[]'
+  required: []
