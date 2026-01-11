@@ -14,11 +14,10 @@ jobs:
         run: npm install -g windmill-cli
 
       - name: Pull from homelab workspace
-        run: wmill sync pull --skip-variables --skip-secrets --skip-resources
+        run: wmill sync pull --skip-variables --skip-secrets --skip-resources --token "$WMILL_TOKEN" --base-url "$WMILL_BASE_URL" --workspace homelab
         env:
           WMILL_TOKEN: ${{ secrets.WMILL_TOKEN }}
           WMILL_BASE_URL: ${{ vars.WMILL_URL }}
-          WMILL_WORKSPACE: homelab
 
       - name: Create PR if changes
         uses: peter-evans/create-pull-request@v5
