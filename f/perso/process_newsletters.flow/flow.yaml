@@ -1,16 +1,17 @@
 summary: Process newsletters
-description: ""
+description: ''
 value:
   modules:
     - id: preprocess
       summary: Shorten URLs and remove tracking params
       value:
         type: rawscript
-        content: "!inline shorten_urls.inline_script.py"
+        content: '!inline shorten_urls_and_remove_tracking_params.inline_script.py'
         input_transforms:
           text_html:
             type: javascript
             expr: flow_input.textHtml
+        lock: '!inline shorten_urls_and_remove_tracking_params.inline_script.lock'
         language: python3
       continue_on_error: false
     - id: a
@@ -18,33 +19,82 @@ value:
       value:
         type: aiagent
         input_transforms:
+          max_completion_tokens:
+            type: static
+            value: null
+          max_iterations:
+            type: static
+            value: 10
+          memory:
+            type: static
+            value:
+              kind: 'off'
+          output_schema:
+            type: static
+            value:
+              $schema: 'https://json-schema.org/draft/2020-12/schema'
+              type: object
+              order:
+                - type
+                - source
+                - newsletter_summary
+                - language
+                - articles
+              properties:
+                type:
+                  type: string
+                  description: ''
+                  default: ''
+                  enum:
+                    - links
+                    - text-only
+                articles:
+                  type: array
+                  description: ''
+                  default: []
+                  items:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                      title:
+                        type: string
+                      topics:
+                        type: array
+                        items:
+                          type: string
+                      url:
+                        type: string
+                    required:
+                      - url
+                      - title
+                      - summary
+                language:
+                  type: string
+                  description: ISO 639 language codes
+                  default: ''
+                newsletter_summary:
+                  type: string
+                source:
+                  type: string
+              required:
+                - type
+                - source
+                - newsletter_summary
+                - language
+                - articles
+          output_type:
+            type: static
+            value: text
           provider:
             type: static
             value:
               kind: customai
               model: anthropic/claude-haiku-4-5-20251001
-              resource: $res:f/perso/litellm_windmil_customai
-          output_type:
+              resource: '$res:f/perso/litellm_windmil_customai'
+          streaming:
             type: static
-            value: text
-          user_message:
-            type: javascript
-            expr: >-
-              `Process this newsletter email.
-
-                **From:** ${flow_input.from}
-                **Subject:** ${flow_input.subject}
-
-                <email_content>
-                ${results.preprocess.shortened_html}
-                </email_content>
-
-                Instructions:
-                1. Read the newsletter content
-                2. Identify article links worth extracting (ignore junk links)
-                3. Return structured JSON with summaries
-
-                If there are no article links (just text content), summarize directly without calling the tool`
+            value: true
           system_prompt:
             type: static
             value: >-
@@ -66,79 +116,30 @@ value:
                 For text-only newsletters (personal essays, no external links), set type to "text-only" and leave articles as empty array. Put the full summary in newsletter_summary.
 
                 Always respond with valid JSON only, no markdown code blocks.
-          streaming:
-            type: static
-            value: true
-          memory:
-            type: static
-            value:
-              kind: off
-          output_schema:
-            type: static
-            value:
-              $schema: https://json-schema.org/draft/2020-12/schema
-              type: object
-              order:
-                - type
-                - source
-                - newsletter_summary
-                - language
-                - articles
-              properties:
-                type:
-                  type: string
-                  description: ""
-                  default: ""
-                  enum:
-                    - links
-                    - text-only
-                source:
-                  type: string
-                newsletter_summary:
-                  type: string
-                language:
-                  type: string
-                  description: ISO 639 language codes
-                  default: ""
-                articles:
-                  type: array
-                  description: ""
-                  default: []
-                  items:
-                    type: object
-                    properties:
-                      summary:
-                        type: string
-                      title:
-                        type: string
-                      topics:
-                        type: array
-                        items:
-                          type: string
-                      url:
-                        type: string
-                    required:
-                      - url
-                      - title
-                      - summary
-              required:
-                - type
-                - source
-                - newsletter_summary
-                - language
-                - articles
-          user_images:
-            type: static
-            value: []
-          max_completion_tokens:
-            type: static
-            value: null
           temperature:
             type: static
             value: null
-          max_iterations:
+          user_images:
             type: static
-            value: 10
+            value: []
+          user_message:
+            type: javascript
+            expr: |-
+              `Process this newsletter email.
+
+                **From:** ${flow_input.from}
+                **Subject:** ${flow_input.subject}
+
+                <email_content>
+                ${results.preprocess.shortened_html}
+                </email_content>
+
+                Instructions:
+                1. Read the newsletter content
+                2. Identify article links worth extracting (ignore junk links)
+                3. Return structured JSON with summaries
+
+                If there are no article links (just text content), summarize directly without calling the tool`
         tools: []
       continue_on_error: false
       mock:
@@ -149,7 +150,7 @@ value:
       summary: Restore URLs in AI output
       value:
         type: rawscript
-        content: "!inline restore_urls.inline_script.py"
+        content: '!inline restore_urls_in_ai_output.inline_script.py'
         input_transforms:
           ai_output:
             type: javascript
@@ -157,13 +158,14 @@ value:
           url_mapping:
             type: javascript
             expr: results.preprocess.url_mapping
+        lock: '!inline restore_urls_in_ai_output.inline_script.lock'
         language: python3
       continue_on_error: false
     - id: b
       summary: Compute embeddings and store in supabase
       value:
         type: rawscript
-        content: "!inline compute_embeddings_and_store_in_supabase.inline_script.py"
+        content: '!inline compute_embeddings_and_store_in_supabase.inline_script.py'
         input_transforms:
           type:
             type: javascript
@@ -192,6 +194,7 @@ value:
           supabase_resource:
             type: javascript
             expr: resource('f/perso/supabase_alex_org')
+        lock: '!inline compute_embeddings_and_store_in_supabase.inline_script.lock'
         concurrency_time_window_s: 0
         language: python3
       continue_on_error: false
@@ -202,15 +205,17 @@ value:
         input_transforms:
           discord_webhook:
             type: static
-            value: $res:f/perso/discord_ackb_homelab_notifications
+            value: '$res:f/perso/discord_ackb_homelab_notifications'
           message:
             type: javascript
-            expr: '`\`\`\`\{"success": ${results.b.success}, "newsletter_id":
+            value: >-
+              ```\{"success": ${results.b.success}, "newsletter_id":
               ${results.b.newsletter_id}, "articles_created":
-              ${results.b.articles_created}\}\`\`\``'
-            value: '```\{"success": ${results.b.success}, "newsletter_id":
+              ${results.b.articles_created}\}```
+            expr: >-
+              `\`\`\`\{"success": ${results.b.success}, "newsletter_id":
               ${results.b.newsletter_id}, "articles_created":
-              ${results.b.articles_created}\}```'
+              ${results.b.articles_created}\}\`\`\``
         is_trigger: false
         path: hub/16038/discord/send_a_message_to_discord_using_webhook
   failure_module:
@@ -224,7 +229,7 @@ value:
           expr: error.name
         discord_webhook:
           type: static
-          value: $res:f/perso/discord_ackb_homelab_notifications
+          value: '$res:f/perso/discord_ackb_homelab_notifications'
         message:
           type: javascript
           expr: error.message
@@ -232,7 +237,7 @@ value:
       path: hub/16045/discord/send_the_error_to_discord
   flow_env: {}
 schema:
-  $schema: https://json-schema.org/draft/2020-12/schema
+  $schema: 'https://json-schema.org/draft/2020-12/schema'
   type: object
   description: Webhook body data
   order:
@@ -241,20 +246,20 @@ schema:
     - subject
     - date
   properties:
+    date:
+      type: string
+      description: ''
+      default: ''
     from:
       type: string
       description: The 'from' field from webhook body
-      default: ""
-    textHtml:
-      type: string
-      description: ""
-      default: ""
+      default: ''
     subject:
       type: string
-      description: ""
-      default: ""
-    date:
+      description: ''
+      default: ''
+    textHtml:
       type: string
-      description: ""
-      default: ""
+      description: ''
+      default: ''
   required: []
