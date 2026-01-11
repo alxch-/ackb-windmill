@@ -31,7 +31,7 @@ def main(queries: list = [],) -> list[str]:
     seen_ids = set()
     for q in queries:
         print(f"Starting decision check for query {q}")
-        with httpx.Client(headers=_headers(wmill.get_variable("u/alex/piste_api_prod")), timeout=30.0) as client:
+        with httpx.Client(headers=_headers(wmill.get_variable("f/perso/piste_api_prod")), timeout=30.0) as client:
             for page in range(0, MAX_PAGES):
                 params = {"query": q, "page_size": PAGE_SIZE, "page": page, "jurisdiction": "tj", "operator": "and"}
                 resp = client.get(url, params=params)
