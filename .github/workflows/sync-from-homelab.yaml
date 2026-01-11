@@ -4,6 +4,10 @@ on:
     - cron: '0 */6 * * *'  # Every 6 hours
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   pull:
     runs-on: ubuntu-latest
@@ -14,7 +18,7 @@ jobs:
         run: npm install -g windmill-cli
 
       - name: Pull from homelab workspace
-        run: wmill sync pull --skip-variables --skip-secrets --skip-resources --token "$WMILL_TOKEN" --base-url "$WMILL_BASE_URL" --workspace homelab
+        run: wmill sync pull --skip-variables --skip-secrets --skip-resources --yes --token "$WMILL_TOKEN" --base-url "$WMILL_BASE_URL" --workspace homelab
         env:
           WMILL_TOKEN: ${{ secrets.WMILL_TOKEN }}
           WMILL_BASE_URL: ${{ vars.WMILL_URL }}
