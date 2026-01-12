@@ -198,26 +198,6 @@ value:
         concurrency_time_window_s: 0
         language: python3
       continue_on_error: false
-    - id: c
-      summary: Send a message to discord using webhook (discord)
-      value:
-        type: script
-        input_transforms:
-          discord_webhook:
-            type: static
-            value: '$res:f/perso/discord_ackb_homelab_notifications'
-          message:
-            type: javascript
-            value: >-
-              ```\{"success": ${results.b.success}, "newsletter_id":
-              ${results.b.newsletter_id}, "articles_created":
-              ${results.b.articles_created}\}```
-            expr: >-
-              `\`\`\`\{"success": ${results.b.success}, "newsletter_id":
-              ${results.b.newsletter_id}, "articles_created":
-              ${results.b.articles_created}\}\`\`\``
-        is_trigger: false
-        path: hub/16038/discord/send_a_message_to_discord_using_webhook
   failure_module:
     id: failure
     summary: Send the error to discord (discord)
