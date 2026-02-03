@@ -11,7 +11,7 @@ value:
     - id: b
       value:
         type: rawscript
-        content: '!inline inline_script_0.inline_script.py'
+        content: '!inline b.inline_script.py'
         input_transforms:
           description:
             type: javascript
@@ -30,7 +30,7 @@ value:
           todoist_resource:
             type: static
             value: '$res:u/alex/todoist_alex'
-        lock: '!inline inline_script_0.inline_script.lock'
+        lock: '!inline b.inline_script.lock'
         language: python3
 schema:
   $schema: 'https://json-schema.org/draft/2020-12/schema'
